@@ -241,3 +241,72 @@ describe('stock, move history, settings and profile pages', () => {
     expect(await screen.findByText(/page not found/i)).toBeTruthy();
   });
 });
+
+describe('email confirmation & password recovery (Supabase defaults, no dashboard changes)', () => {
+  it('after sign-up shows the "confirm your email" panel and can resend the email', async () => {
+    const { client } = setup({ signedIn: false });
+    renderApp('/signup');
+    fireEvent.change(await screen.findByLabelText(/^login id/i), { target: { value: 'newuser1' } });
+    fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: 'New@Example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'Passw0rd!x' } });
+    fireEvent.change(screen.getByLabelText(/re-enter password/i), { target: { value: 'Passw0rd!x' } });
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+
+    expect(await screen.findByText(/confirm your email/i)).toBeTruthy();
+    const signUpCall = client.__authCalls.find((c) => c.name === 'signUp');
+    expect(signUpCall.args.email).toBe('new@example.com');
+    expect(signUpCall.args.options.data).toMatchObject({ login_id: 'newuser1', role: 'INVENTORY_MANAGER' });
+
+    fireEvent.click(screen.getByRole('button', { name: /resend confirmation email/i }));
+    await waitFor(() => expect(client.__authCalls.find((c) => c.name === 'resend')?.args).toMatchObject({ type: 'signup', email: 'new@example.com' }));
+    expect(await screen.findByText(/new confirmation email was sent/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /resend available in/i })).toBeTruthy(); // cooldown
+  });
+
+  it('tells an unconfirmed user to open the link instead of "Invalid Login ID or Password"', async () => {
+    const db = createDb();
+    state.client = createFakeSupabase({
+      db,
+      rpc: createRpc(db),
+      session: null,
+      auth: { signInWithPassword: async () => ({ data: { session: null, user: null }, error: { message: 'Email not confirmed', code: 'email_not_confirmed' } }) },
+    });
+    renderApp('/login');
+    fireEvent.change(await screen.findByLabelText(/login id \/ email/i), { target: { value: 'manager1' } });
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'Passw0rd!x' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
+    expect(await screen.findByText(/confirm your email first/i)).toBeTruthy();
+    expect(screen.queryByText('Invalid Login ID or Password')).toBeNull();
+    expect(screen.getByRole('button', { name: /resend confirmation email/i })).toBeTruthy();
+  });
+
+  it('explains Supabase mailer limits when the address is not authorized', async () => {
+    const db = createDb();
+    state.client = createFakeSupabase({
+      db,
+      rpc: createRpc(db),
+      session: null,
+      auth: { signUp: async () => ({ data: { user: null, session: null }, error: { message: 'Error sending confirmation email', status: 500 } }) },
+    });
+    renderApp('/signup');
+    fireEvent.change(await screen.findByLabelText(/^login id/i), { target: { value: 'newuser1' } });
+    fireEvent.change(screen.getByLabelText(/^email/i), { target: { value: 'judge@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: 'Passw0rd!x' } });
+    fireEvent.change(screen.getByLabelText(/re-enter password/i), { target: { value: 'Passw0rd!x' } });
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    expect(await screen.findByText(/only delivers to the project team/i)).toBeTruthy();
+  });
+
+  it('sends a recovery session to the reset page from any route and returns to login afterwards', async () => {
+    const { client } = setup();
+    renderApp('/dashboard');
+    await screen.findByText(/Total Products in Stock/i);
+    client.__emit('PASSWORD_RECOVERY', session); // what the emailed link triggers on landing
+    expect(await screen.findByRole('heading', { name: /choose a new password/i })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^new password/i), { target: { value: 'N3wPassw0rd!' } });
+    fireEvent.change(screen.getByLabelText(/re-enter password/i), { target: { value: 'N3wPassw0rd!' } });
+    fireEvent.click(screen.getByRole('button', { name: /update password/i }));
+    expect(await screen.findByText(/password updated/i)).toBeTruthy();
+    expect(screen.getByRole('heading', { name: /^sign in$/i })).toBeTruthy();
+  });
+});

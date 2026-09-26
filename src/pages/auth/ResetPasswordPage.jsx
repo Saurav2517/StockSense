@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AuthLayout, AuthLink } from './AuthLayout';
+import { AuthLayout } from './AuthLayout';
 import { FormField, Input } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
@@ -27,6 +27,12 @@ export function ResetPasswordPage() {
 
   // If the recovery session arrives after mount (link flow), move to the password step.
   if (session && recovery && step === 'code') setStep('password');
+
+  async function backToSignIn() {
+    clearRecovery();
+    if (session) await signOut();
+    navigate('/login', { replace: true });
+  }
 
   async function verifyCode(e) {
     e.preventDefault();
@@ -66,12 +72,16 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout
-      title={step === 'code' ? 'Enter your reset code' : 'Choose a new password'}
-      subtitle={step === 'code' ? 'Use the code from the reset email, or simply click the link in that email.' : 'Must be longer than 8 characters with upper, lower and special characters.'}
+      title={step === 'code' ? 'Open your reset email' : 'Choose a new password'}
+      subtitle={
+        step === 'code'
+          ? 'Click the link in the reset email — it opens this page with a secure session. If your email shows a 6-digit code instead, enter it below.'
+          : 'Must be longer than 8 characters with upper, lower and special characters.'
+      }
       footer={
-        <>
-          <AuthLink to="/login">Back to sign in</AuthLink>
-        </>
+        <button type="button" className="link" onClick={backToSignIn}>
+          Back to sign in
+        </button>
       }
     >
       {error && <Alert kind="error" className="mb-4">{error}</Alert>}
@@ -80,7 +90,7 @@ export function ResetPasswordPage() {
           <FormField label="Email" htmlFor="email" required>
             <Input id="email" type="email" value={form.email} onChange={set('email')} autoComplete="email" />
           </FormField>
-          <FormField label="One-time code" htmlFor="token" required hint="Not in the email? Ask your admin to add {{ .Token }} to the Supabase 'Reset password' template, or use the link.">
+          <FormField label="One-time code" htmlFor="token" required hint="Only present when the Supabase 'Reset password' email template includes {{ .Token }}; otherwise use the link.">
             <Input id="token" inputMode="numeric" value={form.token} onChange={set('token')} placeholder="123456" />
           </FormField>
           <Button type="submit" className="w-full" loading={loading}>

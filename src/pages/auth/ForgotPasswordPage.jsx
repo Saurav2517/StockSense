@@ -35,7 +35,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout
       title="Reset your password"
-      subtitle="We'll email you a reset link and a one-time code."
+      subtitle="We'll email you a link to choose a new password."
       footer={
         <>
           Remembered it? <AuthLink to="/login">Back to sign in</AuthLink>
@@ -45,10 +45,10 @@ export function ForgotPasswordPage() {
       {sent ? (
         <div className="space-y-4">
           <Alert kind="success" icon={MailCheck} title="Check your inbox">
-            If an account exists for <strong>{email}</strong>, a password reset email is on its way. Open the link, or enter the code from the email on the next screen.
+            If an account exists for <strong>{email}</strong>, a password reset email is on its way. Open the link in the <em>same browser</em> — it brings you back here to choose a new password.
           </Alert>
-          <Button className="w-full" onClick={() => navigate('/reset-password', { state: { email } })}>
-            I have a code
+          <Button variant="secondary" className="w-full" onClick={() => navigate('/reset-password', { state: { email } })}>
+            My email contains a 6-digit code
           </Button>
         </div>
       ) : (

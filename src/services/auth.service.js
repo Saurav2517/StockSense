@@ -1,6 +1,16 @@
 import { supabase, unwrap } from '../lib/supabase';
 
 export const INVALID_CREDENTIALS = 'Invalid Login ID or Password';
+export const EMAIL_NOT_CONFIRMED = 'email_not_confirmed';
+
+/** Error raised when the account exists but the confirmation link was never opened. */
+export class EmailNotConfirmedError extends Error {
+  constructor(email) {
+    super('Please confirm your email address before signing in.');
+    this.code = EMAIL_NOT_CONFIRMED;
+    this.email = email;
+  }
+}
 
 /**
  * Login with "Login ID / email" + password (SystemDesign.md §5).
@@ -17,9 +27,24 @@ export async function signIn({ identifier, password }) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.toLowerCase(), password });
   if (error) {
     if (/invalid login credentials|invalid_credentials/i.test(error.message)) throw new Error(INVALID_CREDENTIALS);
+    // Supabase default: "Confirm email" is ON, so an unconfirmed account cannot sign in yet.
+    if (error.code === EMAIL_NOT_CONFIRMED || /email not confirmed/i.test(error.message)) throw new EmailNotConfirmedError(email.toLowerCase());
     throw error;
   }
   return data;
+}
+
+/**
+ * Re-sends the sign-up confirmation email. Note: Supabase's built-in mailer only
+ * delivers to the project's team-member addresses and allows ~2 emails/hour.
+ */
+export async function resendConfirmation(email) {
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email: email.trim().toLowerCase(),
+    options: { emailRedirectTo: `${window.location.origin}/login` },
+  });
+  if (error) throw error;
 }
 
 export async function isLoginIdAvailable(loginId) {

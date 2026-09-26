@@ -143,12 +143,14 @@ class Builder {
 export function createFakeSupabase({ db, rpc = {}, session = null, auth = {} }) {
   const log = [];
   const rpcCalls = [];
+  const authCalls = [];
   const listeners = new Set();
   let currentSession = session;
 
   const client = {
     __log: log,
     __rpcCalls: rpcCalls,
+    __authCalls: authCalls,
     __db: db,
     from: (table) => new Builder(db, table, log),
     rpc: (name, args) => {
@@ -171,10 +173,19 @@ export function createFakeSupabase({ db, rpc = {}, session = null, auth = {} }) 
         return { data: { subscription: { unsubscribe: () => listeners.delete(cb) } } };
       },
       signInWithPassword: async (creds) => {
+        authCalls.push({ name: 'signInWithPassword', args: creds });
         if (auth.signInWithPassword) return auth.signInWithPassword(creds);
         return { data: { session: null, user: null }, error: { message: 'Invalid login credentials' } };
       },
-      signUp: async (args) => (auth.signUp ? auth.signUp(args) : { data: { user: { id: 'u-new' }, session: null }, error: null }),
+      // Supabase default ("Confirm email" ON): user created, no session until the link is opened.
+      signUp: async (args) => {
+        authCalls.push({ name: 'signUp', args });
+        return auth.signUp ? auth.signUp(args) : { data: { user: { id: 'u-new', identities: [{ id: 'i-1' }] }, session: null }, error: null };
+      },
+      resend: async (args) => {
+        authCalls.push({ name: 'resend', args });
+        return auth.resend ? auth.resend(args) : { data: {}, error: null };
+      },
       signOut: async () => {
         currentSession = null;
         listeners.forEach((cb) => cb('SIGNED_OUT', null));

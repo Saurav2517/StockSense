@@ -44,18 +44,19 @@ Alternatively with the Supabase CLI: `supabase link --project-ref <ref>` then `s
 Optional demo master data (warehouse WH, locations, categories, products, contacts — **no stock**):
 `supabase/seed.sql`. Stock must always enter through operations so the ledger stays complete.
 
-### 2.3 Auth settings
-**Authentication → Providers → Email**
-- For a hackathon demo, turn **Confirm email** *off* so sign-up logs in immediately.
-  (If you keep it on, users must click the confirmation link before their first login.)
+### 2.3 Auth settings — nothing to configure
+The app is built for Supabase's **defaults**, so you can skip the Authentication dashboard entirely:
 
-**Authentication → URL Configuration**
-- Site URL: your Vercel URL (e.g. `https://stocksense.vercel.app`)
-- Redirect URLs: add `http://localhost:5173/**` and `https://<your-vercel-domain>/**`
+| Default | What happens in StockSense |
+| --- | --- |
+| **Confirm email = ON** | Sign-up creates the account and shows a *Confirm your email* screen (with *Resend*). Login before confirming shows the same guidance instead of a generic error. After the link is opened the user is signed in / can sign in. |
+| **Site URL = `http://localhost:3000`** | Emailed links (confirmation, password reset) return to the Site URL. The dev server therefore runs on **port 3000** so the links land in the running app (`npm run dev`). A password-reset link opens a recovery session; the app routes it to the *Choose a new password* page from any route. |
+| **Built-in mailer (no custom SMTP)** | Supabase only delivers to **e-mail addresses of your Supabase organization's team members** and sends at most **~2 e-mails per hour**. Sign up with the address you use for Supabase. Other addresses fail with *Email address not authorized* — the app explains this. |
 
-Password reset supports both e-mail flows: the **link** in the default "Reset Password" template works out of the box
-(open it in the same browser that requested the reset — PKCE), and if you also want the **6-digit code** option shown on the
-reset page, add `{{ .Token }}` to that template (**Authentication → Emails → Reset Password**).
+Consequences to keep in mind:
+- Open emailed links in the **same browser** you used to request them (PKCE). If you open one elsewhere, the address is still verified — just sign in normally.
+- On the **deployed** (Vercel) app the links still return to `localhost:3000` until the Site URL is changed. The account is confirmed regardless, so users simply go back to the Vercel URL and sign in.
+- If you later want judges/teammates to self-register with any address, the two dashboard changes are: **Authentication → SMTP Settings** (custom SMTP) and **Authentication → URL Configuration → Site URL** = your Vercel URL. Neither requires a code change.
 
 ---
 
@@ -63,7 +64,7 @@ reset page, add `{{ .Token }}` to that template (**Authentication → Emails →
 
 ```bash
 cp .env.example .env.local   # fill VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (git-ignored)
-npm run dev                  # http://localhost:5173
+npm run dev                  # http://localhost:3000  (Supabase's default Site URL)
 ```
 
 Without a `.env.local` (or `.env`) the app boots into a "Supabase not configured" screen instead of crashing.
@@ -72,11 +73,11 @@ Without a `.env.local` (or `.env`) the app boots into a "Supabase not configured
 
 | Script | Purpose |
 | --- | --- |
-| `npm run dev` | Vite dev server (0.0.0.0:5173) |
+| `npm run dev` | Vite dev server (0.0.0.0:3000) |
 | `npm run build` / `npm run preview` | Production build / serve `dist/` (PWA service worker enabled) |
 | `npm run lint` | ESLint (React hooks + React Compiler rules) |
 | `npm run test:db` | Runs the SQL migrations inside PGlite and executes the §30 scenarios (107 assertions) |
-| `npm run test:ui` | Vitest + Testing Library UI tests against an in-memory Supabase fake (14 tests) |
+| `npm run test:ui` | Vitest + Testing Library UI tests against an in-memory Supabase fake (18 tests) |
 | `npm test` | Both test suites |
 | `npm run icons` | Regenerates PWA icons in `public/` |
 
@@ -90,7 +91,7 @@ Without a `.env.local` (or `.env`) the app boots into a "Supabase not configured
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
 4. Deploy. `vercel.json` rewrites every route to `index.html` so deep links such as `/receipts/<id>` work.
-5. Add the Vercel domain to Supabase **Redirect URLs** (see 2.3).
+5. Optional (only if other people must self-register on the deployed app): see the last bullet of 2.3.
 
 Every push to `main` redeploys automatically.
 
@@ -98,7 +99,8 @@ Every push to `main` redeploys automatically.
 
 ## 5. First run
 
-1. Open the app → **Sign up** (Login ID 6–12 chars, password > 8 chars with lower/upper/special). Role defaults to *Inventory Manager*.
+1. Open the app → **Sign up** with the e-mail address of your Supabase account (Login ID 6–12 chars, password > 8 chars with lower/upper/special). Role defaults to *Inventory Manager*.
+   Open the confirmation e-mail in the same browser → you land back in the app, signed in (or sign in on the Login page).
 2. **Settings → Warehouses**: create `WH` (Main Warehouse), then **Locations**: `A1` Rack A1 and `B2` Rack B2.
 3. **Settings → Suppliers & Customers**: add a supplier and a customer (optional).
 4. **Products → New product**: e.g. `STL-001` Steel Rod 12mm, reorder level 20.
@@ -125,7 +127,9 @@ Check **Move History** for the ledger and the **Dashboard** for live KPIs. Total
 | Symptom | Fix |
 | --- | --- |
 | "Supabase is not configured" screen | `.env.local` missing or URL not `https://…` — restart `npm run dev` after editing it |
-| Sign-up succeeds but login says *Invalid Login ID or Password* | Email confirmation is on — confirm the e-mail or disable *Confirm email* |
+| Sign-up says *Error sending confirmation email* / *not authorized* | Built-in mailer only delivers to your Supabase team's addresses (max ~2/hour) — use that address, or configure custom SMTP |
+| Login shows *Confirm your email first* | Open the confirmation link (or press *Resend*), then sign in |
+| Confirmation link opens `localhost:3000` and nothing loads | The dev server isn't running — start `npm run dev`; the e-mail is already confirmed, so you can also just sign in on the deployed app |
 | `function public.create_receipt does not exist` | Migration 3 not applied (run the SQL files in order) |
 | Lists are empty although data exists | Migration 5 (RLS) not applied, or the user has no `profiles` row (migration 2 trigger) |
 | Vercel 404 on refresh | `vercel.json` missing from the deployed commit |

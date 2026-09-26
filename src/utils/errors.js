@@ -10,11 +10,23 @@ const CODE_MESSAGES = {
   PGRST301: 'Your session has expired. Please sign in again.',
 };
 
+// Supabase Auth's built-in email service (no custom SMTP configured) has two hard limits:
+// it only delivers to the project's team-member addresses and sends ~2 emails per hour.
+const AUTH_EMAIL_MESSAGES = [
+  [/email address not authorized|not authorized/i, 'This email address cannot receive Supabase emails yet: without custom SMTP, Supabase only delivers to the project team\'s addresses. Sign up with the project owner\'s email, or ask the admin to configure SMTP.'],
+  [/error sending (confirmation|recovery|magic link) email/i, 'Supabase could not send the email. Its built-in mailer only delivers to the project team\'s addresses (2 emails/hour) — use the project owner\'s email or configure custom SMTP.'],
+  [/rate limit exceeded|over_email_send_rate_limit/i, 'Email limit reached — Supabase\'s built-in mailer allows about 2 emails per hour. Please try again later.'],
+  [/for security purposes, you can only request this after/i, 'Please wait a minute before requesting another email.'],
+];
+
 export function getErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
   if (!error) return fallback;
   if (typeof error === 'string') return error;
 
   const code = error.code || error.status;
+  for (const [pattern, text] of AUTH_EMAIL_MESSAGES) {
+    if (pattern.test(error.message || '') || pattern.test(String(error.code || ''))) return text;
+  }
   if (code === '23505' && error.details) {
     const m = /\((.+?)\)=\((.+?)\)/.exec(error.details);
     if (m) return `${humanize(m[1])} "${m[2]}" already exists.`;

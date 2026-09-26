@@ -6,6 +6,7 @@ import { FormField, Input, Select } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { useAuth } from '../../hooks/useAuth';
+import { ConfirmEmailPanel } from './ConfirmEmailPanel';
 import { getErrorMessage } from '../../utils/errors';
 import { passwordChecks, validateEmail, validateLoginId, validatePassword } from '../../utils/validation';
 import { ROLE_META } from '../../utils/status';
@@ -18,6 +19,7 @@ export function SignUpPage() {
   const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState(''); // account created, confirmation email sent
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   function validate() {
@@ -39,9 +41,11 @@ export function SignUpPage() {
     try {
       const data = await signUp(form);
       if (data.session) {
+        // "Confirm email" is OFF in this project → signed in immediately
         navigate('/dashboard', { replace: true });
       } else {
-        navigate('/login', { replace: true, state: { notice: 'Account created. Check your email to confirm it, then sign in.' } });
+        // Supabase default ("Confirm email" ON): the link in the email activates the account
+        setPendingEmail(form.email.trim().toLowerCase());
       }
     } catch (err) {
       setError(getErrorMessage(err));
@@ -51,6 +55,22 @@ export function SignUpPage() {
   }
 
   const checks = passwordChecks(form.password);
+
+  if (pendingEmail) {
+    return (
+      <AuthLayout
+        title="Almost there"
+        subtitle="Your account was created."
+        footer={
+          <>
+            Already confirmed? <AuthLink to="/login">Sign in</AuthLink>
+          </>
+        }
+      >
+        <ConfirmEmailPanel email={pendingEmail} />
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout

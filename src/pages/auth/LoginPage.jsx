@@ -6,7 +6,27 @@ import { FormField, Input } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { useAuth } from '../../hooks/useAuth';
+import { ConfirmEmailPanel } from './ConfirmEmailPanel';
+import { EMAIL_NOT_CONFIRMED } from '../../services/auth.service';
 import { getErrorMessage } from '../../utils/errors';
+
+/**
+ * Supabase appends `error_code` / `error_description` to the redirect when an
+ * emailed link is expired or was opened in another browser (PKCE). Surface it.
+ */
+function noticeFromUrl() {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.search);
+  const description = params.get('error_description');
+  if (description) {
+    const code = params.get('error_code') || '';
+    return { kind: 'warning', text: /otp_expired/.test(code) ? 'That email link has expired. Request a new one below.' : description.replace(/\+/g, ' ') };
+  }
+  // A `code` without a session means the link was verified server-side but opened in a
+  // different browser than the one that requested it (PKCE) — the account is confirmed.
+  if (params.get('code')) return { kind: 'success', text: 'Email link verified. Sign in with your Login ID or email.' };
+  return null;
+}
 
 export function LoginPage() {
   const { signIn } = useAuth();
@@ -14,8 +34,10 @@ export function LoginPage() {
   const location = useLocation();
   const [form, setForm] = useState({ identifier: '', password: '' });
   const [error, setError] = useState('');
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const notice = location.state?.notice;
+  const [urlNotice] = useState(noticeFromUrl);
+  const notice = location.state?.notice || (location.state?.confirmed ? 'Email confirmed — you can sign in now.' : '');
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -25,11 +47,13 @@ export function LoginPage() {
       return;
     }
     setLoading(true);
+    setUnconfirmedEmail('');
     try {
       await signIn(form);
       navigate(location.state?.from || '/dashboard', { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err));
+      if (err?.code === EMAIL_NOT_CONFIRMED) setUnconfirmedEmail(err.email);
+      else setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -45,8 +69,16 @@ export function LoginPage() {
         </>
       }
     >
+      {unconfirmedEmail && (
+        <div className="mb-4">
+          <ConfirmEmailPanel email={unconfirmedEmail} title="Confirm your email first">
+            The account <strong>{unconfirmedEmail}</strong> exists but its email address has not been confirmed yet. Open the confirmation link we emailed you, then sign in.
+          </ConfirmEmailPanel>
+        </div>
+      )}
       <form onSubmit={onSubmit} className="space-y-4" noValidate>
         {notice && <Alert kind="success">{notice}</Alert>}
+        {urlNotice && <Alert kind={urlNotice.kind}>{urlNotice.text}</Alert>}
         {error && <Alert kind="error">{error}</Alert>}
         <FormField label="Login ID / Email" htmlFor="identifier" required>
           <Input

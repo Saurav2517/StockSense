@@ -63,7 +63,10 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 5173,
+    // 3000 matches Supabase Auth's default Site URL (http://localhost:3000), so
+    // confirmation / password-reset links land in the running app with no
+    // dashboard configuration.
+    port: 3000,
     // Allow the sandbox / preview hosts as well as localhost.
     allowedHosts: true,
   },
