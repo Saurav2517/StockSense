@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { KeyRound, LogIn, Mail, ShieldCheck } from 'lucide-react';
 import { AuthLayout, AuthLink } from './AuthLayout';
@@ -22,12 +22,12 @@ function noticeFromUrl() {
     const code = params.get('error_code') || '';
     return { kind: 'warning', text: /otp_expired/.test(code) ? 'That email link has expired. Request a new one below.' : description.replace(/\+/g, ' ') };
   }
-  if (params.get('code')) return { kind: 'success', text: 'Email link verified. Sign in with your Login ID or email.' };
+  if (params.get('code')) return { kind: 'success', text: 'Email link verified. Signing you in…' };
   return null;
 }
 
 export function LoginPage() {
-  const { signIn, requestLoginOtp, verifyLoginOtp } = useAuth();
+  const { signIn, requestLoginOtp, verifyLoginOtp, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -48,6 +48,13 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [urlNotice] = useState(noticeFromUrl);
   const notice = location.state?.notice || (location.state?.confirmed ? 'Email confirmed — you can sign in now.' : '');
+
+  // Automatically redirect if session is established (e.g. user clicked magic link in email)
+  useEffect(() => {
+    if (user) {
+      navigate(location.state?.from || '/dashboard', { replace: true });
+    }
+  }, [user, navigate, location]);
 
   // Handle standard password login
   async function onSubmitPassword(e) {
@@ -70,7 +77,7 @@ export function LoginPage() {
     }
   }
 
-  // Handle requesting OTP code via email
+  // Handle requesting OTP code / magic link via email
   async function handleSendOtp(e) {
     if (e) e.preventDefault();
     setError('');
@@ -114,7 +121,7 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Sign in to StockSense"
-      subtitle={authMode === 'password' ? 'Sign in using your password or switch to OTP authentication.' : 'Sign in using a one-time OTP code sent to your email.'}
+      subtitle={authMode === 'password' ? 'Sign in using your password or switch to OTP authentication.' : 'Sign in using a one-time OTP code or magic link sent to your email.'}
       footer={
         <>
           New to StockSense? <AuthLink to="/signup">Create an account</AuthLink>
@@ -145,7 +152,7 @@ export function LoginPage() {
           }`}
         >
           <Mail className="h-3.5 w-3.5" />
-          OTP Authentication
+          OTP / Magic Link
         </button>
       </div>
 
@@ -192,7 +199,7 @@ export function LoginPage() {
       ) : !otpSent ? (
         /* OTP Request Form */
         <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
-          <FormField label="Login ID / Email" htmlFor="otp-identifier" required hint="We will send a 6-digit OTP verification code to your registered email.">
+          <FormField label="Login ID / Email" htmlFor="otp-identifier" required hint="We will email an authentication link / OTP code to your registered email address.">
             <Input
               id="otp-identifier"
               autoComplete="username"
@@ -203,16 +210,22 @@ export function LoginPage() {
             />
           </FormField>
           <Button type="submit" className="w-full" loading={loading} icon={Mail}>
-            Send OTP Code
+            Send OTP / Magic Link
           </Button>
         </form>
       ) : (
         /* OTP Verification Form */
         <form onSubmit={handleVerifyOtp} className="space-y-4" noValidate>
           <Alert kind="info" icon={ShieldCheck} title="Check your inbox">
-            We sent a 6-digit OTP code to <strong>{otpEmail}</strong>. Enter the code below to log in.
+            <div>
+              An email was sent to <strong>{otpEmail}</strong>:
+              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs">
+                <li>If your email contains a <strong>6-digit code</strong>, enter it below.</li>
+                <li>If your email contains a <strong>Login Link</strong>, simply click the link to sign in automatically.</li>
+              </ul>
+            </div>
           </Alert>
-          <FormField label="6-Digit OTP Code" htmlFor="otp-token" required>
+          <FormField label="6-Digit OTP Code" htmlFor="otp-token">
             <Input
               id="otp-token"
               inputMode="numeric"
@@ -228,7 +241,7 @@ export function LoginPage() {
           </Button>
           <div className="flex flex-col items-center gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400">
             <button type="button" onClick={handleSendOtp} className="link">
-              Resend OTP Code
+              Resend Email
             </button>
             <button type="button" onClick={() => { setOtpSent(false); setOtpToken(''); }} className="hover:underline">
               Use a different Login ID / Email

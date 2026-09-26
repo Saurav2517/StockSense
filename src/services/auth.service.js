@@ -63,16 +63,29 @@ export async function requestLoginOtp(identifier) {
 }
 
 /**
- * Verifies the 6-digit OTP code sent for login.
+ * Verifies the 6-digit OTP code or magiclink token sent for login.
  */
 export async function verifyLoginOtp({ email, token }) {
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanToken = token.trim();
+
+  // Try type 'email' first (used for 6-digit OTP codes)
   const { data, error } = await supabase.auth.verifyOtp({
-    email: email.trim().toLowerCase(),
-    token: token.trim(),
+    email: cleanEmail,
+    token: cleanToken,
     type: 'email',
   });
-  if (error) throw error;
-  return data;
+  if (!error) return data;
+
+  // Fallback to type 'magiclink' (used if Supabase project is configured with magiclink tokens)
+  const fallback = await supabase.auth.verifyOtp({
+    email: cleanEmail,
+    token: cleanToken,
+    type: 'magiclink',
+  });
+  if (!fallback.error) return fallback.data;
+
+  throw error;
 }
 
 /**
