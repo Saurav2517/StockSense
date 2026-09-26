@@ -53,19 +53,20 @@ Optional demo master data (warehouse WH, locations, categories, products, contac
 - Site URL: your Vercel URL (e.g. `https://stocksense.vercel.app`)
 - Redirect URLs: add `http://localhost:5173/**` and `https://<your-vercel-domain>/**`
 
-Password reset uses the 6-digit OTP e-mail flow (`resetPasswordForEmail` → `verifyOtp(type: 'recovery')`), so the default
-"Reset Password" e-mail template must include `{{ .Token }}` (it does by default alongside the link).
+Password reset supports both e-mail flows: the **link** in the default "Reset Password" template works out of the box
+(open it in the same browser that requested the reset — PKCE), and if you also want the **6-digit code** option shown on the
+reset page, add `{{ .Token }}` to that template (**Authentication → Emails → Reset Password**).
 
 ---
 
 ## 3. Local development
 
 ```bash
-cp .env.example .env         # fill VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+cp .env.example .env.local   # fill VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (git-ignored)
 npm run dev                  # http://localhost:5173
 ```
 
-Without a `.env` the app boots into a "Supabase not configured" screen instead of crashing.
+Without a `.env.local` (or `.env`) the app boots into a "Supabase not configured" screen instead of crashing.
 
 ### Scripts
 
@@ -123,7 +124,7 @@ Check **Move History** for the ledger and the **Dashboard** for live KPIs. Total
 
 | Symptom | Fix |
 | --- | --- |
-| "Supabase is not configured" screen | `.env` missing or URL not `https://…` — restart `npm run dev` after editing `.env` |
+| "Supabase is not configured" screen | `.env.local` missing or URL not `https://…` — restart `npm run dev` after editing it |
 | Sign-up succeeds but login says *Invalid Login ID or Password* | Email confirmation is on — confirm the e-mail or disable *Confirm email* |
 | `function public.create_receipt does not exist` | Migration 3 not applied (run the SQL files in order) |
 | Lists are empty although data exists | Migration 5 (RLS) not applied, or the user has no `profiles` row (migration 2 trigger) |
