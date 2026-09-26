@@ -16,7 +16,8 @@ export default [
     rules: {
       ...js.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      // Capitalised identifiers are React components used in JSX (e.g. `icon: Icon`).
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^(_|[A-Z])' }],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
