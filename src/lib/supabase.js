@@ -17,18 +17,31 @@ function isPrivilegedKey(key = '') {
   }
 }
 
+const isPlaceholder = (v = '') => /your-project-ref|your-key|your-anon-public-key/i.test(v);
+
 export const configError = !supabaseUrl || !supabaseAnonKey
   ? 'missing'
-  : !/^https?:\/\//.test(supabaseUrl)
-    ? 'bad-url'
-    : isPrivilegedKey(supabaseAnonKey)
-      ? 'secret-key'
-      : null;
+  : isPlaceholder(supabaseUrl) || isPlaceholder(supabaseAnonKey)
+    ? 'placeholder'
+    : !/^https:\/\/[a-z0-9-]+\.[a-z0-9.-]+\/?$/i.test(supabaseUrl.trim())
+      ? 'bad-url'
+      : isPrivilegedKey(supabaseAnonKey)
+        ? 'secret-key'
+        : null;
 
 export const isSupabaseConfigured = configError === null;
 
+/** Host the frontend talks to — shown in connection errors so a wrong URL is obvious. */
+export const supabaseHost = (() => {
+  try {
+    return new URL(supabaseUrl).host;
+  } catch {
+    return supabaseUrl || '';
+  }
+})();
+
 export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
+  ? createClient(supabaseUrl.trim().replace(/\/$/, ''), supabaseAnonKey.trim(), {
       auth: {
         persistSession: true,
         autoRefreshToken: true,

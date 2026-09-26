@@ -10,6 +10,8 @@ vi.mock('../lib/supabase', () => ({
     return state.client;
   },
   isSupabaseConfigured: true,
+  configError: null,
+  supabaseHost: 'fake.supabase.co',
   unwrap: async (promise) => {
     const { data, error } = await promise;
     if (error) throw error;

@@ -11,7 +11,15 @@ export function SetupRequiredPage() {
           <img src="/favicon.svg" alt="" className="h-10 w-10 rounded-lg" />
           <div>
             <h1 className="text-lg font-bold text-slate-900">{secretKey ? 'Unsafe Supabase key detected' : 'StockSense needs a Supabase project'}</h1>
-            <p className="text-sm text-slate-500">{secretKey ? 'The app refused to start.' : configError === 'bad-url' ? 'VITE_SUPABASE_URL must start with https://' : 'The frontend is not configured yet.'}</p>
+            <p className="text-sm text-slate-500">
+              {secretKey
+                ? 'The app refused to start.'
+                : configError === 'bad-url'
+                  ? 'VITE_SUPABASE_URL must look like https://<project-ref>.supabase.co (no “…”, spaces or paths).'
+                  : configError === 'placeholder'
+                    ? '.env.local still contains the example values — replace them with your project’s URL and publishable key.'
+                    : 'The frontend is not configured yet.'}
+            </p>
           </div>
         </div>
         {secretKey && (

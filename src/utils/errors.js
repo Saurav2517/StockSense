@@ -1,3 +1,5 @@
+import { supabaseHost } from '../lib/supabase';
+
 // Turns Supabase / PostgREST / PostgreSQL errors into user-friendly text.
 // Business-rule errors raised by the database functions already carry a
 // readable message, so they are shown as-is.
@@ -34,13 +36,13 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
   if (code === '42501' && error.message?.includes('row-level security')) {
     return 'You do not have permission to perform this action (Inventory Manager role required).';
   }
+  if (/Failed to fetch|NetworkError|Load failed/i.test(error.message || '')) {
+    return `Cannot reach the Supabase project at ${supabaseHost || 'the configured URL'}. Check your internet connection, and that VITE_SUPABASE_URL in .env.local is exactly the Project URL from the dashboard (use its copy button — the page shows it truncated), then restart npm run dev.`;
+  }
   if (error.message && !/^(TypeError|Failed to fetch)/.test(error.message) && !isGenericPg(error.message)) {
     return error.message;
   }
   if (CODE_MESSAGES[code]) return CODE_MESSAGES[code];
-  if (/Failed to fetch|NetworkError/i.test(error.message || '')) {
-    return 'Cannot reach the server. Check your connection and try again.';
-  }
   return error.message || fallback;
 }
 
