@@ -35,6 +35,47 @@ export async function signIn({ identifier, password }) {
 }
 
 /**
+ * Sends a 6-digit login OTP code or Magic Link to the user's email address.
+ * Accepts either Email or Login ID.
+ */
+export async function requestLoginOtp(identifier) {
+  const id = identifier.trim();
+  if (!id) throw new Error('Enter your Login ID or Email address');
+  let email = id;
+  if (!id.includes('@')) {
+    const { data, error } = await supabase.rpc('email_for_login_id', { p_login_id: id });
+    if (error || !data) throw new Error(INVALID_CREDENTIALS);
+    email = data;
+  }
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.toLowerCase(),
+    options: {
+      emailRedirectTo: `${window.location.origin}/login`,
+    },
+  });
+  if (error) {
+    if (error.code === EMAIL_NOT_CONFIRMED || /email not confirmed/i.test(error.message)) {
+      throw new EmailNotConfirmedError(email.toLowerCase());
+    }
+    throw error;
+  }
+  return email.toLowerCase();
+}
+
+/**
+ * Verifies the 6-digit OTP code sent for login.
+ */
+export async function verifyLoginOtp({ email, token }) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email: email.trim().toLowerCase(),
+    token: token.trim(),
+    type: 'email',
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
  * Re-sends the sign-up confirmation email. Note: Supabase's built-in mailer only
  * delivers to the project's team-member addresses and allows ~2 emails/hour.
  */

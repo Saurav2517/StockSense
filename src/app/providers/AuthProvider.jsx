@@ -79,6 +79,8 @@ export function AuthProvider({ children }) {
       clearRecovery: () => setRecovery(false),
       refreshProfile: () => loadProfile(session?.user?.id),
       signIn: authService.signIn,
+      requestLoginOtp: authService.requestLoginOtp,
+      verifyLoginOtp: authService.verifyLoginOtp,
       signUp: authService.signUp,
       signOut: authService.signOut,
     }),
