@@ -24,11 +24,12 @@ npm install
 
 ### 2.1 Create the project
 1. Create a project at <https://supabase.com/dashboard> (any region).
-2. In **Project Settings → API** copy:
-   - **Project URL** → `VITE_SUPABASE_URL`
-   - **anon public** key → `VITE_SUPABASE_ANON_KEY`
+2. In **Project Settings → API Keys** copy:
+   - **Project URL** (`SUPABASE_URL`) → `VITE_SUPABASE_URL`
+   - **Publishable key** (`sb_publishable_…`, shown as `SUPABASE_PUBLISHABLE_KEY`) → `VITE_SUPABASE_ANON_KEY`
+     (older projects show a legacy **anon public** JWT instead — it works the same way)
 
-> Only these two public values are ever used by the frontend. **Never** put the `service_role` key in the app, `.env`, or Vercel env vars.
+> Only these two public values are ever used by the frontend. **Never** put the secret key (`sb_secret_…`) / `service_role` key or the JWKS URL in the app, `.env.local`, or Vercel env vars — the app refuses to start if it detects a secret key.
 
 ### 2.2 Run the migrations (in order)
 Open **SQL Editor** and run each file from `supabase/migrations/`, in this order:
