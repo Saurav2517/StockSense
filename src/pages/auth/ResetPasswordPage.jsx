@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthLayout } from './AuthLayout';
-import { FormField, Input } from '../../components/ui/FormField';
+import { FormField, Input, PasswordInput } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { useAuth } from '../../hooks/useAuth';
@@ -100,10 +100,10 @@ export function ResetPasswordPage() {
       ) : (
         <form onSubmit={savePassword} className="space-y-4" noValidate>
           <FormField label="New password" htmlFor="password" required>
-            <Input id="password" type="password" autoFocus value={form.password} onChange={set('password')} autoComplete="new-password" />
+            <PasswordInput id="password" autoFocus value={form.password} onChange={set('password')} autoComplete="new-password" />
           </FormField>
           <FormField label="Re-enter password" htmlFor="confirm" required>
-            <Input id="confirm" type="password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" />
+            <PasswordInput id="confirm" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" />
           </FormField>
           <Button type="submit" className="w-full" loading={loading}>
             Update password

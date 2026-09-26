@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { AuthLayout, AuthLink } from './AuthLayout';
-import { FormField, Input } from '../../components/ui/FormField';
+import { FormField, Input, PasswordInput } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { useAuth } from '../../hooks/useAuth';
@@ -91,9 +91,8 @@ export function LoginPage() {
           />
         </FormField>
         <FormField label="Password" htmlFor="password" required>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}

@@ -1,10 +1,14 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --color-brand-50: #f0fdfa;
   --color-brand-100: #ccfbf1;
   --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
   --color-brand-500: #14b8a6;
   --color-brand-600: #0d9488;
   --color-brand-700: #0f766e;
@@ -15,9 +19,13 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply bg-slate-50 text-slate-900 transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100;
   }
   input[type='number']::-webkit-outer-spin-button,
   input[type='number']::-webkit-inner-spin-button {
@@ -27,37 +35,55 @@
 
 @layer components {
   .input {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs
+    @apply block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 shadow-xs transition-all duration-150
       placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20
-      disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500;
+      disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500
+      dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500
+      dark:focus:border-brand-500 dark:focus:ring-brand-500/30 dark:disabled:bg-slate-800/50 dark:disabled:text-slate-600;
   }
   .input-error {
-    @apply border-red-400 focus:border-red-500 focus:ring-red-500/20;
+    @apply border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-500/30;
   }
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-xs;
+    @apply rounded-xl border border-slate-200/80 bg-white/90 shadow-xs transition-colors duration-200 dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-slate-950/20;
   }
   .table-wrap {
-    @apply overflow-x-auto rounded-xl border border-slate-200 bg-white;
+    @apply overflow-x-auto rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900;
   }
   .th {
-    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400;
   }
   .td {
-    @apply px-4 py-3 text-sm text-slate-700 align-middle;
+    @apply px-4 py-3 text-sm text-slate-700 dark:text-slate-300 align-middle;
   }
   .link {
-    @apply font-medium text-brand-700 hover:text-brand-800 hover:underline;
+    @apply font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 hover:underline transition-colors;
   }
 }
 
-/* Print: only the main content (used by the Print action on DONE documents) */
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300 dark:bg-slate-700;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-slate-600;
+}
+
+/* Print: only the main content */
 @media print {
   .no-print {
     display: none !important;
   }
   body {
-    background: white;
+    background: white !important;
+    color: black !important;
   }
   main {
     padding: 0 !important;

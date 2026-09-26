@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { KeyRound, Save, Wifi, WifiOff } from 'lucide-react';
 import { PageHeader, DetailList } from '../../components/ui/Misc';
 import { Button } from '../../components/ui/Button';
-import { FormField, Input } from '../../components/ui/FormField';
+import { FormField, Input, PasswordInput } from '../../components/ui/FormField';
 import { Alert } from '../../components/ui/Feedback';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../hooks/useAuth';
@@ -102,7 +102,7 @@ export function ProfilePage() {
             <form onSubmit={savePassword} className="space-y-3" noValidate>
               {pwError && <Alert kind="error">{pwError}</Alert>}
               <FormField label="New password" htmlFor="pf-pw">
-                <Input id="pf-pw" type="password" autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} />
+                <PasswordInput id="pf-pw" autoComplete="new-password" value={pw.password} onChange={(e) => setPw({ ...pw, password: e.target.value })} />
               </FormField>
               <ul className="grid grid-cols-2 gap-1 text-xs">
                 {checks.map((c) => (
@@ -112,7 +112,7 @@ export function ProfilePage() {
                 ))}
               </ul>
               <FormField label="Confirm password" htmlFor="pf-pw2">
-                <Input id="pf-pw2" type="password" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
+                <PasswordInput id="pf-pw2" autoComplete="new-password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} />
               </FormField>
               <Button type="submit" variant="secondary" loading={savingPw} disabled={!pw.password}>
                 Update password

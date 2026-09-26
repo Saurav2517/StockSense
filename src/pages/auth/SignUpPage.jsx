@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, UserPlus, X } from 'lucide-react';
 import { AuthLayout, AuthLink } from './AuthLayout';
-import { FormField, Input, Select } from '../../components/ui/FormField';
+import { FormField, Input, PasswordInput, Select } from '../../components/ui/FormField';
 import { Button } from '../../components/ui/Button';
 import { Alert } from '../../components/ui/Feedback';
 import { useAuth } from '../../hooks/useAuth';
@@ -106,10 +106,10 @@ export function SignUpPage() {
         </FormField>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Password" htmlFor="password" required error={errors.password}>
-            <Input id="password" type="password" value={form.password} onChange={set('password')} invalid={Boolean(errors.password)} autoComplete="new-password" />
+            <PasswordInput id="password" value={form.password} onChange={set('password')} invalid={Boolean(errors.password)} autoComplete="new-password" />
           </FormField>
           <FormField label="Re-enter password" htmlFor="confirm" required error={errors.confirm}>
-            <Input id="confirm" type="password" value={form.confirm} onChange={set('confirm')} invalid={Boolean(errors.confirm)} autoComplete="new-password" />
+            <PasswordInput id="confirm" value={form.confirm} onChange={set('confirm')} invalid={Boolean(errors.confirm)} autoComplete="new-password" />
           </FormField>
         </div>
         <ul className="grid grid-cols-2 gap-1 text-xs">
