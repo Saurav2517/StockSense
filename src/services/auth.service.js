@@ -35,7 +35,7 @@ export async function signIn({ identifier, password }) {
 }
 
 /**
- * Sends a 6-digit login OTP code or Magic Link to the user's email address.
+ * Sends a 6-digit login OTP code to the user's email address.
  * Accepts either Email or Login ID.
  */
 export async function requestLoginOtp(identifier) {
@@ -63,29 +63,19 @@ export async function requestLoginOtp(identifier) {
 }
 
 /**
- * Verifies the 6-digit OTP code or magiclink token sent for login.
+ * Verifies the 6-digit OTP code sent to the email for login.
  */
 export async function verifyLoginOtp({ email, token }) {
   const cleanEmail = email.trim().toLowerCase();
   const cleanToken = token.trim();
 
-  // Try type 'email' first (used for 6-digit OTP codes)
   const { data, error } = await supabase.auth.verifyOtp({
     email: cleanEmail,
     token: cleanToken,
     type: 'email',
   });
-  if (!error) return data;
-
-  // Fallback to type 'magiclink' (used if Supabase project is configured with magiclink tokens)
-  const fallback = await supabase.auth.verifyOtp({
-    email: cleanEmail,
-    token: cleanToken,
-    type: 'magiclink',
-  });
-  if (!fallback.error) return fallback.data;
-
-  throw error;
+  if (error) throw error;
+  return data;
 }
 
 /**

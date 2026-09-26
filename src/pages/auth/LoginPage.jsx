@@ -20,9 +20,9 @@ function noticeFromUrl() {
   const description = params.get('error_description');
   if (description) {
     const code = params.get('error_code') || '';
-    return { kind: 'warning', text: /otp_expired/.test(code) ? 'That email link has expired. Request a new one below.' : description.replace(/\+/g, ' ') };
+    return { kind: 'warning', text: /otp_expired/.test(code) ? 'That email code has expired. Request a new one below.' : description.replace(/\+/g, ' ') };
   }
-  if (params.get('code')) return { kind: 'success', text: 'Email link verified. Signing you in…' };
+  if (params.get('code')) return { kind: 'success', text: 'Email verified. Signing you in…' };
   return null;
 }
 
@@ -49,7 +49,7 @@ export function LoginPage() {
   const [urlNotice] = useState(noticeFromUrl);
   const notice = location.state?.notice || (location.state?.confirmed ? 'Email confirmed — you can sign in now.' : '');
 
-  // Automatically redirect if session is established (e.g. user clicked magic link in email)
+  // Automatically redirect if session is established
   useEffect(() => {
     if (user) {
       navigate(location.state?.from || '/dashboard', { replace: true });
@@ -77,7 +77,7 @@ export function LoginPage() {
     }
   }
 
-  // Handle requesting OTP code / magic link via email
+  // Handle requesting 6-digit OTP code via email
   async function handleSendOtp(e) {
     if (e) e.preventDefault();
     setError('');
@@ -99,7 +99,7 @@ export function LoginPage() {
     }
   }
 
-  // Handle verifying OTP code
+  // Handle verifying 6-digit OTP code
   async function handleVerifyOtp(e) {
     e.preventDefault();
     setError('');
@@ -121,7 +121,7 @@ export function LoginPage() {
   return (
     <AuthLayout
       title="Sign in to StockSense"
-      subtitle={authMode === 'password' ? 'Sign in using your password or switch to OTP authentication.' : 'Sign in using a one-time OTP code or magic link sent to your email.'}
+      subtitle={authMode === 'password' ? 'Sign in using your password or switch to 6-Digit OTP authentication.' : 'Sign in using a 6-digit OTP code sent to your email.'}
       footer={
         <>
           New to StockSense? <AuthLink to="/signup">Create an account</AuthLink>
@@ -152,7 +152,7 @@ export function LoginPage() {
           }`}
         >
           <Mail className="h-3.5 w-3.5" />
-          OTP / Magic Link
+          6-Digit OTP Code
         </button>
       </div>
 
@@ -199,7 +199,7 @@ export function LoginPage() {
       ) : !otpSent ? (
         /* OTP Request Form */
         <form onSubmit={handleSendOtp} className="space-y-4" noValidate>
-          <FormField label="Login ID / Email" htmlFor="otp-identifier" required hint="We will email an authentication link / OTP code to your registered email address.">
+          <FormField label="Login ID / Email" htmlFor="otp-identifier" required hint="We will email a 6-digit OTP verification code to your registered email address.">
             <Input
               id="otp-identifier"
               autoComplete="username"
@@ -210,22 +210,16 @@ export function LoginPage() {
             />
           </FormField>
           <Button type="submit" className="w-full" loading={loading} icon={Mail}>
-            Send OTP / Magic Link
+            Send 6-Digit OTP Code
           </Button>
         </form>
       ) : (
         /* OTP Verification Form */
         <form onSubmit={handleVerifyOtp} className="space-y-4" noValidate>
           <Alert kind="info" icon={ShieldCheck} title="Check your inbox">
-            <div>
-              An email was sent to <strong>{otpEmail}</strong>:
-              <ul className="mt-1.5 list-disc space-y-1 pl-4 text-xs">
-                <li>If your email contains a <strong>6-digit code</strong>, enter it below.</li>
-                <li>If your email contains a <strong>Login Link</strong>, simply click the link to sign in automatically.</li>
-              </ul>
-            </div>
+            We sent a 6-digit OTP code to <strong>{otpEmail}</strong>. Enter the 6-digit code below to log in.
           </Alert>
-          <FormField label="6-Digit OTP Code" htmlFor="otp-token">
+          <FormField label="6-Digit OTP Code" htmlFor="otp-token" required>
             <Input
               id="otp-token"
               inputMode="numeric"
@@ -237,11 +231,11 @@ export function LoginPage() {
             />
           </FormField>
           <Button type="submit" className="w-full" loading={loading} icon={LogIn}>
-            Verify & Sign in
+            Verify OTP & Sign In
           </Button>
           <div className="flex flex-col items-center gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400">
             <button type="button" onClick={handleSendOtp} className="link">
-              Resend Email
+              Resend OTP Code
             </button>
             <button type="button" onClick={() => { setOtpSent(false); setOtpToken(''); }} className="hover:underline">
               Use a different Login ID / Email
