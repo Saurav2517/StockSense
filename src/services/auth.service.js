@@ -69,13 +69,23 @@ export async function verifyLoginOtp({ email, token }) {
   const cleanEmail = email.trim().toLowerCase();
   const cleanToken = token.trim();
 
+  // Try type 'email' first (standard 6-digit OTP code)
   const { data, error } = await supabase.auth.verifyOtp({
     email: cleanEmail,
     token: cleanToken,
     type: 'email',
   });
-  if (error) throw error;
-  return data;
+  if (!error) return data;
+
+  // Fallback to type 'magiclink' if token was issued under magiclink type
+  const fallback = await supabase.auth.verifyOtp({
+    email: cleanEmail,
+    token: cleanToken,
+    type: 'magiclink',
+  });
+  if (!fallback.error) return fallback.data;
+
+  throw error;
 }
 
 /**
